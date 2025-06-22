@@ -211,6 +211,144 @@ export default function Reports() {
     fetchReportData(dateRange.start, dateRange.end);
   };
 
+  const handleDownloadPDF = () => {
+    if (!reportData) {
+      setError("Tiada data laporan untuk dimuat turun. Sila jana laporan terlebih dahulu.");
+      return;
+    }
+
+    // Create HTML content for PDF
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Laporan Ladang ${new Date(dateRange.start).toLocaleDateString('ms-MY')} - ${new Date(dateRange.end).toLocaleDateString('ms-MY')}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+          .header { text-align: center; border-bottom: 3px solid #2D5A27; padding-bottom: 20px; margin-bottom: 30px; }
+          .header h1 { color: #2D5A27; margin: 0; font-size: 28px; }
+          .header p { color: #666; margin: 5px 0; }
+          .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+          .metric-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; }
+          .metric-value { font-size: 24px; font-weight: bold; color: #2D5A27; margin: 10px 0; }
+          .metric-label { color: #666; font-size: 14px; margin-bottom: 5px; }
+          .metric-trend { color: #28a745; font-size: 12px; }
+          .section { margin-bottom: 30px; }
+          .section h2 { color: #2D5A27; border-bottom: 2px solid #2D5A27; padding-bottom: 10px; }
+          .task-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+          .priority-item, .status-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+          .priority-high { color: #dc3545; }
+          .priority-medium { color: #ffc107; }
+          .priority-low { color: #28a745; }
+          .status-completed { color: #28a745; }
+          .status-progress { color: #007bff; }
+          .status-pending { color: #ffc107; }
+          .status-cancelled { color: #dc3545; }
+          .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
+          @media print { body { margin: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>🥒 LAPORAN LADANG TIMUN</h1>
+          <p>Tempoh: ${new Date(dateRange.start).toLocaleDateString('ms-MY')} - ${new Date(dateRange.end).toLocaleDateString('ms-MY')}</p>
+          <p>Dijana pada: ${new Date().toLocaleDateString('ms-MY')} ${new Date().toLocaleTimeString('ms-MY')}</p>
+        </div>
+
+        <div class="section">
+          <h2>Ringkasan Utama</h2>
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">Jumlah Tanaman</div>
+              <div class="metric-value">${reportData.metrics.totalCrops}</div>
+              <div class="metric-trend">${reportData.metrics.activeCrops} plot aktif</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Jumlah Staf</div>
+              <div class="metric-value">${reportData.metrics.totalStaff}</div>
+              <div class="metric-trend">Staf aktif</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Tugasan Selesai</div>
+              <div class="metric-value">${reportData.metrics.completedTasks}</div>
+              <div class="metric-trend">${reportData.metrics.taskCompletionRate.toFixed(1)}% kadar kejayaan</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Tugasan Tertunda</div>
+              <div class="metric-value">${reportData.metrics.pendingTasks}</div>
+              <div class="metric-trend">Memerlukan perhatian</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Tugasan Lewat</div>
+              <div class="metric-value">${reportData.metrics.overdueTasks}</div>
+              <div class="metric-trend">Melepasi tarikh akhir</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Analisis Tugasan</h2>
+          <div class="task-breakdown">
+            <div>
+              <h3>Mengikut Keutamaan</h3>
+              <div class="priority-item">
+                <span class="priority-high">🔴 Tinggi</span>
+                <span>${reportData.tasksByPriority?.high || 0}</span>
+              </div>
+              <div class="priority-item">
+                <span class="priority-medium">🟡 Sederhana</span>
+                <span>${reportData.tasksByPriority?.medium || 0}</span>
+              </div>
+              <div class="priority-item">
+                <span class="priority-low">🟢 Rendah</span>
+                <span>${reportData.tasksByPriority?.low || 0}</span>
+              </div>
+            </div>
+            <div>
+              <h3>Mengikut Status</h3>
+              <div class="status-item">
+                <span class="status-completed">✅ Selesai</span>
+                <span>${reportData.tasksByStatus?.completed || 0}</span>
+              </div>
+              <div class="status-item">
+                <span class="status-progress">🔄 Sedang Dijalankan</span>
+                <span>${reportData.tasksByStatus?.inProgress || 0}</span>
+              </div>
+              <div class="status-item">
+                <span class="status-pending">⏳ Belum Selesai</span>
+                <span>${reportData.tasksByStatus?.pending || 0}</span>
+              </div>
+              <div class="status-item">
+                <span class="status-cancelled">❌ Dibatalkan</span>
+                <span>${reportData.tasksByStatus?.cancelled || 0}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>Laporan dijana daripada Sistem Pengurusan Ladang Timun</p>
+          <p>© ${new Date().getFullYear()} - Semua hak terpelihara</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Create blob and open in new tab
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const newWindow = window.open(url, '_blank');
+    
+    if (newWindow) {
+      newWindow.document.title = `Laporan Ladang ${new Date(dateRange.start).toLocaleDateString('ms-MY')} - ${new Date(dateRange.end).toLocaleDateString('ms-MY')}`;
+      // Clean up the URL after a short delay
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else {
+      setError("Tidak dapat membuka tab baru. Sila benarkan pop-up untuk laman web ini.");
+    }
+  };
+
   return (
     <main className="p-8">
       <div className="max-w-6xl mx-auto">
@@ -507,7 +645,10 @@ export default function Reports() {
                     Laporan untuk tempoh {new Date(dateRange.start).toLocaleDateString('ms-MY')} - {new Date(dateRange.end).toLocaleDateString('ms-MY')}
                   </p>
                 </div>
-                <button className="btn-secondary flex items-center gap-2">
+                <button 
+                  onClick={handleDownloadPDF}
+                  className="btn-secondary flex items-center gap-2"
+                >
                   <Download className="h-4 w-4" />
                   Muat Turun PDF
                 </button>

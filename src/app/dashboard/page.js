@@ -143,9 +143,9 @@ export default function Dashboard() {
 
   const staffQuickActions = [
     {
-      title: 'Tambah Tanaman Baru',
+      title: 'Lihat Pengurusan Tanaman',
       icon: Leaf,
-      href: '/crop-management/add',
+      href: '/crop-management',
       color: 'bg-primary'
     },
     {
